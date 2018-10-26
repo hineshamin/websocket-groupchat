@@ -70,6 +70,26 @@ class ChatUser {
     );
   }
 
+  /** handle priv: broadcast to only this user and the user specified */
+  handlePriv(text, user) {
+    const members = this.room.members;
+    let memberFound = false;
+    members.forEach(member => {
+      if (member.name === user) {
+        memberFound = true;
+        this.send(JSON.stringify({ type: 'priv', text, from: 'me', to: user }));
+        member.send(
+          JSON.stringify({ type: 'priv', text, from: this.name, to: 'me' })
+        );
+      }
+    });
+    if (!memberFound) {
+      return this.send(
+        JSON.stringify({ type: 'priv', text: 'User not found' })
+      );
+    }
+  }
+
   /** Handle messages from client:
    *
    * - {type: "join", name: username} : join
@@ -83,6 +103,7 @@ class ChatUser {
     else if (msg.type === 'chat') this.handleChat(msg.text);
     else if (msg.type === 'joke') this.handleJoke();
     else if (msg.type === 'members') this.handleMembers();
+    else if (msg.type === 'priv') this.handlePriv(msg.text, msg.user);
     else throw new Error(`bad message: ${msg.type}`);
   }
 
